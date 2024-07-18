@@ -170,7 +170,7 @@ describe("Test transaction accounts", async () => {
         )
     );
 
-    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, transactionKeypair);
+    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
 
     let blockhash = await provider.connection.getLatestBlockhash();
     let transaction = new Transaction({blockhash: blockhash.blockhash, lastValidBlockHeight: blockhash.lastValidBlockHeight, feePayer: provider.publicKey})
@@ -222,12 +222,12 @@ describe("Test transaction accounts", async () => {
         )
     );
 
-    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, transactionKeypair);
+    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
 
     //Try to use the same transaction account again in a new transaction (hence overwriting the data)
     try
     {
-      await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, transactionKeypair);
+      await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
     }
     catch (e)
     {

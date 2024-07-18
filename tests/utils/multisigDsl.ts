@@ -89,15 +89,16 @@ export class MultisigDsl {
     proposer: Keypair,
     instructions: Array<TransactionInstruction>,
     multisig: PublicKey,
-    transactionAddress?: Keypair
+    transactionNonce?: number,
+    transactionAddress?: Keypair,
   ) {
     // generate a random nonce for the transaction account
-    let transactionNonce = Math.floor(Math.random() * 90000000) + 10000000;
+    let txnNonce = transactionNonce || Math.floor(Math.random() * 90000000) + 10000000;
 
     const [transactionAccountPda, _transactionAccountBump ] = PublicKey.findProgramAddressSync(
       [
         Buffer.from('transaction_nonce'),
-        new BN(transactionNonce).toArrayLike(Buffer, "le", 8),
+        new BN(txnNonce).toArrayLike(Buffer, "le", 8),
       ],
       this.program.programId
     );
@@ -105,7 +106,7 @@ export class MultisigDsl {
       return { programId: ix.programId, accounts: ix.keys, data: ix.data };
     });
     await this.program.methods
-      .createTransaction(smartContractInstructions, new BN(transactionNonce))
+      .createTransaction(smartContractInstructions, new BN(txnNonce))
       .accounts({
           multisig: multisig,
           transaction: transactionAccountPda,
