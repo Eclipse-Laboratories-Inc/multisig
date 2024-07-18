@@ -6,10 +6,11 @@ import {MultisigDsl} from "./utils/multisigDsl";
 import {describe} from "mocha";
 
 import {fail} from "node:assert";
+import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test transaction accounts", async () => {
   let provider: AnchorProvider;
-  let program: Program;
+  let program: Program<LmaxMultisig>;
   let dsl: MultisigDsl;
   before(async () => {
     let result = await setUpValidator(false);
@@ -43,6 +44,7 @@ describe("Test transaction accounts", async () => {
       "Transaction account should be linked to multisig"
     );
     assert.ok(
+      // @ts-ignore
       !transactionAccount.didExecute,
       "Transaction should not have been executed"
     );
@@ -92,6 +94,7 @@ describe("Test transaction accounts", async () => {
       "Transaction account should be linked to multisig"
     );
     assert.ok(
+      // @ts-ignore
       !transactionAccount.didExecute,
       "Transaction should not have been executed"
     );

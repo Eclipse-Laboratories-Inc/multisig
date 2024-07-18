@@ -1,7 +1,8 @@
 import {Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction} from "@solana/web3.js";
-import {BN, Program, Provider} from "@coral-xyz/anchor";
+import {BN, Program, Provider } from "@coral-xyz/anchor";
 import assert from "assert";
 import {Account, createMint, getOrCreateAssociatedTokenAccount, mintToChecked} from "@solana/spl-token";
+import { LmaxMultisig } from "../../target/types/lmax_multisig";
 
 export interface MultisigAccount {
   address: PublicKey;
@@ -18,10 +19,10 @@ export interface TokenMint {
 }
 
 export class MultisigDsl {
-  readonly program: Program;
+  readonly program: Program<LmaxMultisig>;
   readonly provider: Provider;
 
-  constructor(program: Program, provider: Provider) {
+  constructor(program: Program<LmaxMultisig>, provider: Provider) {
     this.program = program;
     this.provider = provider;
   }
@@ -90,22 +91,30 @@ export class MultisigDsl {
     multisig: PublicKey,
     transactionAddress?: Keypair
   ) {
+    // generate a random nonce for the transaction account
+    let transactionNonce = Math.floor(Math.random() * 90000000) + 10000000;
 
-    let transactionAccount = transactionAddress ? transactionAddress : Keypair.generate();
+    const [transactionAccountPda, _transactionAccountBump ] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('transaction_nonce'),
+        new BN(transactionNonce).toArrayLike(Buffer, "le", 8),
+      ],
+      this.program.programId
+    );
     let smartContractInstructions = instructions.map(ix => {
       return { programId: ix.programId, accounts: ix.keys, data: ix.data };
     });
     await this.program.methods
-      .createTransaction(smartContractInstructions)
+      .createTransaction(smartContractInstructions, new BN(transactionNonce))
       .accounts({
           multisig: multisig,
-          transaction: transactionAccount.publicKey,
+          transaction: transactionAccountPda,
           proposer: proposer.publicKey,
       })
-      .signers([proposer, transactionAccount])
+      .signers([proposer])
       .rpc();
 
-    return transactionAccount.publicKey;
+    return transactionAccountPda;
   }
 
   async approveTransaction(
@@ -113,13 +122,14 @@ export class MultisigDsl {
     multisig: PublicKey,
     tx: PublicKey
   ) {
+    const accounts = {
+      multisig,
+      transaction: tx,
+      owner: approver.publicKey,
+    };
     await this.program.methods
       .approve()
-      .accounts({
-        multisig: multisig,
-        transaction: tx,
-        owner: approver.publicKey,
-      })
+      .accounts(accounts)
       .signers([approver])
       .rpc();
   }
@@ -146,15 +156,17 @@ export class MultisigDsl {
         return JSON.stringify(obj) === _value;
       });
     });
+
+    const etAccounts = {
+      multisig: multisigAddress,
+      multisigSigner,
+      transaction: tx,
+      executor: executor.publicKey,
+      refundee: refundee
+    }
     await this.program.methods
       .executeTransaction()
-      .accounts({
-        multisig: multisigAddress,
-        multisigSigner,
-        transaction: tx,
-        executor: executor.publicKey,
-        refundee: refundee
-      })
+      .accounts(etAccounts)
       .remainingAccounts(dedupedAccounts)
       .signers([executor])
       .rpc();
@@ -175,14 +187,16 @@ export class MultisigDsl {
     multisigAddress: PublicKey,
     executor: Keypair,
     refundee: PublicKey) {
+
+    const accounts = {
+      multisig: multisigAddress,
+      transaction: tx,
+      executor: executor.publicKey,
+      refundee: refundee
+    }
     await this.program.methods
       .cancelTransaction()
-      .accounts({
-        multisig: multisigAddress,
-        transaction: tx,
-        executor: executor.publicKey,
-        refundee: refundee
-      })
+      .accounts(accounts)
       .signers([executor])
       .rpc();
   }
@@ -196,32 +210,40 @@ export class MultisigDsl {
     executor: Keypair,
     refundee: PublicKey
   ) {
+    const transactionNonce = new BN(Math.floor(Math.random() * 90000000) + 10000000)
 
-    const transactionAccount = Keypair.generate();
+    const [transactionAccount, _transactionAccountBump] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('transaction_nonce'),
+        new BN(transactionNonce).toArrayLike(Buffer, "le", 8),
+      ],
+      this.program.programId
+    );
     const smartContractInstructions = instructions.map(ix => {
       return { programId: ix.programId, accounts: ix.keys, data: ix.data };
     });
     const proposeInstruction = await this.program.methods
-      .createTransaction(smartContractInstructions)
+      .createTransaction(smartContractInstructions, transactionNonce)
       .accounts({
         multisig: multisigAddress,
-        transaction: transactionAccount.publicKey,
+        transaction: transactionAccount,
         proposer: proposer.publicKey,
       })
-      .signers([proposer, transactionAccount])
+      .signers([proposer])
       .instruction();
 
-    const approveInstructions = await Promise.all(signers.map(async signer =>
-    await this.program.methods
+    const approveInstructions = await Promise.all(signers.map(async signer => {
+    const approveAccounts = {
+      multisig: multisigAddress,
+      transaction: transactionAccount,
+      owner: signer.publicKey,
+    };
+    return await this.program.methods
       .approve()
-      .accounts({
-        multisig: multisigAddress,
-        transaction: transactionAccount.publicKey,
-        owner: signer.publicKey,
-      })
+      .accounts(approveAccounts)
       .signers([signer])
       .instruction()
-    ));
+    }));
 
     const accounts = instructions.flatMap(ix =>
       ix.keys
@@ -238,15 +260,18 @@ export class MultisigDsl {
         return JSON.stringify(obj) === _value;
       });
     });
+
+    const eIaccounts = {
+      multisig: multisigAddress,
+      multisigSigner,
+      transaction: transactionAccount,
+      executor: executor.publicKey,
+      refundee: refundee
+
+    }
     const executeInstruction = await this.program.methods
       .executeTransaction()
-      .accounts({
-        multisig: multisigAddress,
-        multisigSigner,
-        transaction: transactionAccount.publicKey,
-        executor: executor.publicKey,
-        refundee: refundee
-      })
+      .accounts(eIaccounts)
       .remainingAccounts(dedupedAccounts)
       .signers([executor])
       .instruction();
@@ -256,7 +281,7 @@ export class MultisigDsl {
       .add(proposeInstruction)
       .add(...approveInstructions)
       .add(executeInstruction);
-    transaction.sign(transactionAccount, proposer, ...signers);
+    transaction.sign(proposer, ...signers);
     console.log("Transaction size " + transaction.serialize({verifySignatures: false}).byteLength);
     await this.provider.sendAndConfirm(transaction);
   }

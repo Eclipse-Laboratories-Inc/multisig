@@ -5,10 +5,11 @@ import {PublicKey,} from "@solana/web3.js";
 import {MultisigDsl} from "./utils/multisigDsl";
 import {describe} from "mocha";
 import {fail} from "node:assert";
+import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test changing multisig threshold", async () => {
   let provider: AnchorProvider;
-  let program: Program;
+  let program: Program<LmaxMultisig>;
   let dsl: MultisigDsl;
   before(async () => {
     let result = await setUpValidator(false);

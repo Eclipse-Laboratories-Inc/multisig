@@ -7,6 +7,8 @@ import { Keypair, PublicKey, Connection } from "@solana/web3.js";
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import path = require("node:path");
 import shell from "shelljs";
+import { LmaxMultisig } from "../../target/types/lmax_multisig";
+
 
 export interface AnchorConfig {
   path: {
@@ -37,7 +39,7 @@ export const setUpValidator = async (
   deployIdl: Boolean
 ): Promise<{
   provider: AnchorProvider;
-  program: Program;
+  program: Program<LmaxMultisig>;
 }> => {
   const config = readAnchorConfig(PATH_TO_ANCHOR_CONFIG);
   const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
@@ -90,9 +92,9 @@ export const setUpValidator = async (
 
   const program = new Program(
     JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
-    programAddress,
     provider
   );
+
 
   return { provider, program };
 };

@@ -11,11 +11,12 @@ import {
 import {MultisigAccount, MultisigDsl} from "./utils/multisigDsl";
 import {describe} from "mocha";
 import {fail} from "node:assert";
+import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 const TOKEN_ACCOUNT_SPACE = 165;
 describe("Test transaction execution", async () => {
   let provider: AnchorProvider;
-  let program: Program;
+  let program: Program<LmaxMultisig>;
   let dsl: MultisigDsl;
 
   before(async () => {
@@ -281,7 +282,7 @@ describe("Test transaction execution", async () => {
 
     await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
 
-    await dsl.assertBalance(ownerA.publicKey, 2_108_880);  // this is the rent exemption amount
+    await dsl.assertBalance(ownerA.publicKey, 2_164_560);  // this is the rent exemption amount
 
     let transactionActInfo = await provider.connection.getAccountInfo(transactionAddress, "confirmed");
     assert.strictEqual(transactionActInfo, null);
@@ -306,7 +307,7 @@ describe("Test transaction execution", async () => {
 
     await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, otherAccount.publicKey);
 
-    await dsl.assertBalance(otherAccount.publicKey, 2_108_880);  // this is the rent exemption amount
+    await dsl.assertBalance(otherAccount.publicKey, 2_164_560);  // this is the rent exemption amount
   }).timeout(20000);
 
   it("should not clear up transaction account if execute fails", async () => {
@@ -328,6 +329,7 @@ describe("Test transaction execution", async () => {
       await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
       fail("The executeTransaction function should have failed");
     } catch (e) {
+      // @ts-ignore
       assert.ok(!transactionAccount.didExecute, "Transaction should not have been executed");
       let transactionActInfo = await provider.connection.getAccountInfo(transactionAddress, "confirmed");
       assert.notEqual(transactionActInfo, null);

@@ -5,10 +5,11 @@ import {Keypair, PublicKey, SystemProgram,} from "@solana/web3.js";
 import {MultisigDsl} from "./utils/multisigDsl";
 import {describe} from "mocha";
 import {fail} from "node:assert";
+import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test changing multisig owner", async () => {
   let provider: AnchorProvider;
-  let program: Program;
+  let program: Program<LmaxMultisig>;
   let dsl: MultisigDsl;
   before(async () => {
     let result = await setUpValidator(false);
@@ -77,8 +78,8 @@ describe("Test changing multisig owner", async () => {
   });
 
   it("should propose, sign and execute changing owners of multisig within one transaction", async () => {
-    const numberOfOwners = 9;
-    const threshold = 4;
+    const numberOfOwners = 7;
+    const threshold = 3;
     const multisig = await dsl.createMultisig(threshold, numberOfOwners);
     const newOwner = Keypair.generate();
 

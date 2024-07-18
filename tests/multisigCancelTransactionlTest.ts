@@ -5,10 +5,11 @@ import {Keypair, PublicKey, SystemProgram,} from "@solana/web3.js";
 import {MultisigDsl} from "./utils/multisigDsl";
 import {describe} from "mocha";
 import {fail} from "node:assert";
+import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test transaction cancellation", async () => {
   let provider: AnchorProvider;
-  let program: Program;
+  let program: Program<LmaxMultisig>;
   let dsl: MultisigDsl;
 
   before(async () => {
@@ -35,7 +36,7 @@ describe("Test transaction cancellation", async () => {
 
     await dsl.cancelTransaction(transactionAddress, multisig.address, ownerB, ownerA.publicKey);
 
-    await dsl.assertBalance(ownerA.publicKey, 2_108_880); // this is the rent exemption amount
+    await dsl.assertBalance(ownerA.publicKey, 2_164_560); // this is the rent exemption amount
 
     let transactionActInfo = await provider.connection.getAccountInfo(
       transactionAddress,
@@ -58,12 +59,13 @@ describe("Test transaction cancellation", async () => {
 
     // Change owner set of the multisig while the TX account at transactionAddress is still pending
     const newOwners = [ownerA.publicKey, ownerB.publicKey, Keypair.generate().publicKey];
+    const accounts = {
+      multisig: multisig.address,
+      multisigSigner: multisig.signer,
+    }
     let changeOwnersInstruction = await program.methods
       .setOwners(newOwners)
-      .accounts({
-        multisig: multisig.address,
-        multisigSigner: multisig.signer,
-      })
+      .accounts(accounts)
       .instruction();
     const changeOwnersAddress: PublicKey = await dsl.proposeTransaction(ownerA, [changeOwnersInstruction], multisig.address);
     await dsl.approveTransaction(ownerB, multisig.address, changeOwnersAddress);
@@ -72,7 +74,7 @@ describe("Test transaction cancellation", async () => {
     // Now cancel the original transaction instruction (the corresponding TX account owner set will be outdated at this point)
     await dsl.assertBalance(ownerB.publicKey, 0);
     await dsl.cancelTransaction(transactionAddress, multisig.address, ownerB, ownerB.publicKey);
-    await dsl.assertBalance(ownerB.publicKey, 2_108_880); // this is the rent exemption amount
+    await dsl.assertBalance(ownerB.publicKey, 2_164_560); // this is the rent exemption amount
 
     let transactionActInfo = await provider.connection.getAccountInfo(
       transactionAddress,

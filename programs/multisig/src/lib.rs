@@ -115,6 +115,7 @@ pub mod lmax_multisig {
     pub fn create_transaction(
         ctx: Context<CreateTransaction>,
         instructions: Vec<TransactionInstruction>,
+        transaction_nonce: u64,
     ) -> Result<()> {
         require!(!instructions.is_empty(), ErrorCode::MissingInstructions);
 
@@ -135,6 +136,7 @@ pub mod lmax_multisig {
         tx.signers = signers;
         tx.multisig = ctx.accounts.multisig.key();
         tx.owner_set_seqno = ctx.accounts.multisig.owner_set_seqno;
+        tx.transaction_nonce = transaction_nonce;
 
         Ok(())
     }
@@ -245,15 +247,16 @@ pub struct CreateMultisig<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(instructions: Vec<TransactionInstruction>)]
+#[instruction(instructions: Vec<TransactionInstruction>, transaction_nonce: u64)]
 pub struct CreateTransaction<'info> {
     multisig: Box<Account<'info, Multisig>>,
     // see https://book.anchor-lang.com/anchor_references/space.html
     #[account(
         init,
-        space = transaction_data_len!(instructions, multisig.owners.len()),
+        space = transaction_data_len!(instructions, multisig.owners.len()) + 8,
         payer = payer,
-        signer
+        seeds = [b"transaction_nonce", transaction_nonce.to_le_bytes().as_ref()],
+        bump,
     )]
     transaction: Box<Account<'info, Transaction>>,
     // One of the owners. Checked in the handler.
@@ -332,6 +335,8 @@ pub struct Transaction {
     pub signers: Vec<bool>,
     // Owner set sequence number.
     pub owner_set_seqno: u32,
+    // transaction nonce for tracking and uniqueness.
+    pub transaction_nonce: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
