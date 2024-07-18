@@ -40,7 +40,7 @@ describe("Test performing signing and execution", async () => {
     await dsl.assertBalance(multisig.signer, 0);
   });
 
-  it.only("should be able to lookup and approve a transaction based on the nonce", async () => {
+  it("should be able to lookup and approve a transaction based on the nonce", async () => {
     const multisig = await dsl.createMultisig(2, 3, 1_000_000);
     const [ownerA, ownerB, _ownerC] = multisig.owners;
 
@@ -70,6 +70,48 @@ describe("Test performing signing and execution", async () => {
     await dsl.executeTransaction(derivedTxnAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
 
     await dsl.assertBalance(multisig.signer, 0);
+  });
+
+  it("should be able to verify signers", async () => {
+    const multisig = await dsl.createMultisig(2, 3, 1_000_000);
+    const [ownerA, ownerB, _ownerC] = multisig.owners;
+
+    // Create instruction to send funds from multisig
+    let transactionInstruction = SystemProgram.transfer({
+      fromPubkey: multisig.signer,
+      lamports: new BN(1_000_000),
+      toPubkey: provider.publicKey,
+    });
+
+    await dsl.assertBalance(multisig.signer, 1_000_000);
+
+    // This nonce comes from the eth deposit
+    const txnNonce = 45678;
+    const _transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address, txnNonce);
+
+    const [derivedTxnAddress, _bump] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('transaction_nonce'),
+        new BN(txnNonce).toArrayLike(Buffer, "le", 8),
+      ],
+      program.programId
+    )
+
+    // signers array [ownerA, ownerB, ownerC];
+    const txn = await program.account.transaction.fetch(derivedTxnAddress);
+    const owners = await program.account.multisig.fetch(multisig.address);
+    assert(owners.owners[0].equals(ownerA.publicKey));
+    assert(txn.signers[0] === true);
+    assert(txn.signers[1] === false);
+    assert(txn.signers[2] === false);
+
+    await dsl.approveTransaction(ownerB, multisig.address, derivedTxnAddress);
+    const txn2 = await program.account.transaction.fetch(derivedTxnAddress);
+    assert(txn2.signers[0] === true);
+    assert(txn2.signers[1] === true);
+    assert(txn2.signers[2] === false);
+
+
   });
 
   it("should transfer partial funds", async () => {
