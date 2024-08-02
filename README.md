@@ -17,8 +17,8 @@ To use, one must first create a `Multisig` account, specifying two important par
 
 #### Client usage
 
-You can create the `Multisig` account with the `client/index.ts` script. Check `node client/index.ts --help` for
-usage.
+You can create the `Multisig` account with the `client/index.ts` script. Check `npx ts-node client/index.ts --help`
+for usage.
 
 #### Remaining usage
 
