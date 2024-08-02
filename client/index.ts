@@ -13,6 +13,7 @@ function loadKeypair(filename: string): Keypair {
 
 interface IClientArgs {
   connectionUrl: string;
+  pathToAnchorConfig: string;
   owners: string[];
   help?: boolean;
 }
@@ -24,6 +25,12 @@ const args = parse<IClientArgs>(
       optional: true,
       defaultValue: "http://127.0.0.1:8899",
       description: "The connection string to the solana node",
+    },
+    pathToAnchorConfig: {
+      type: String,
+      optional: true,
+      defaultValue: "./Anchor.toml",
+      description: "The path to the Anchor.toml file of the solana program",
     },
     owners: {
       type: String,
@@ -51,7 +58,7 @@ if (!args.owners) {
   throw new Error("At least one owner is needed");
 }
 
-const PATH_TO_ANCHOR_CONFIG: string = "./Anchor.toml";
+const PATH_TO_ANCHOR_CONFIG: string = args.pathToAnchorConfig;
 
 const config = toml.parse(fs.readFileSync(PATH_TO_ANCHOR_CONFIG).toString());
 const user = loadKeypair(config.provider.wallet);
