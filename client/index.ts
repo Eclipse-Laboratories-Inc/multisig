@@ -36,8 +36,7 @@ const args = parse<IClientArgs>(
       type: String,
       multiple: true,
       optional: true,
-      description:
-        "The keypair files of the owners of the multisig transactions",
+      description: "The public keys of the owners of the multisig transactions",
     },
     help: {
       type: Boolean,
@@ -79,9 +78,7 @@ const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
   programAddress
 );
 
-const ownersKeypairs = args.owners.map((path) => loadKeypair(path));
-
-const ownersPubkeys = ownersKeypairs.map((keypair) => keypair.publicKey);
+const ownersPubkeys = args.owners.map((pubkey) => new PublicKey(pubkey));
 
 const asyncMain = async () => {
   const multisigTx = await program.methods
