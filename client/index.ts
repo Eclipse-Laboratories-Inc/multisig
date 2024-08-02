@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { LmaxMultisig } from '../target/types/lmax_multisig.js';
 import { Keypair, PublicKey, Connection } from "@solana/web3.js";
 import { AnchorProvider, Program, Wallet, BN } from "@coral-xyz/anchor";
+import { parse } from 'ts-command-line-args';
 
 function loadKeypair(filename: string): Keypair {
     const secret = JSON.parse(fs.readFileSync(filename).toString()) as number[];
@@ -10,14 +11,48 @@ function loadKeypair(filename: string): Keypair {
     return Keypair.fromSecretKey(secretKey);
 }
 
+interface IClientArgs {
+    connectionUrl: string;
+    signers: string[];
+    help?: boolean;
+}
 
-const PATH_TO_ANCHOR_CONFIG: string = "../Anchor.toml";
+const args = parse<IClientArgs>({
+    connectionUrl: {
+        type: String,
+        optional: true,
+        defaultValue: "http://127.0.0.1:8899",
+        description: 'The connection string to the solana node'
+    },
+    signers: {
+        type: String,
+        multiple: true,
+        optional: true,
+        description: 'The keypair files to the signers of the multisig transactions'
+    },
+    help: {
+        type: Boolean,
+        optional: true,
+        alias: 'h',
+        description: 'Prints this usage guide'
+    }
+}, {
+    helpArg: 'help',
+    headerContentSections: [{header: 'Multisig Client', content: 'Creates a multisig account'}]
+})
+
+if (!args.signers) {
+    console.error("At least one signer is needed");
+    process.exit(1);
+}
+
+const PATH_TO_ANCHOR_CONFIG: string = "./Anchor.toml";
 
 const config = toml.parse(fs.readFileSync(PATH_TO_ANCHOR_CONFIG).toString());
 const user = loadKeypair(config.provider.wallet);
 const programAddress = new PublicKey(config.programs[config.provider.cluster].lmax_multisig);
 
-const connection = new Connection("http://127.0.0.1:8899", "confirmed");
+const connection = new Connection(args.connectionUrl, "confirmed");
 const provider = new AnchorProvider(connection, new Wallet(user), {});
 const program = new Program<LmaxMultisig>(
     JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
@@ -30,16 +65,13 @@ const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
     programAddress
 );
 
-const keypair1 = loadKeypair("/Users/yuri/projetos/solanakey1.json");
-const keypair2 = loadKeypair("/Users/yuri/projetos/solanakey2.json");
-const keypair3 = loadKeypair("/Users/yuri/projetos/solanakey3.json");
+const keypairs = args.signers.map((path) => loadKeypair(path));
+
+const pubkeys = keypairs.map((keypair) => keypair.publicKey);
+
 (async () => {
     const multisigTx = await program.methods.createMultisig(
-        [
-            keypair1.publicKey,
-            keypair2.publicKey,
-            keypair3.publicKey
-        ],
+        pubkeys,
         new BN(2),
         nonce)
         .accounts({
@@ -49,4 +81,5 @@ const keypair3 = loadKeypair("/Users/yuri/projetos/solanakey3.json");
         .rpc();
     // get the address of the new multisig
     console.log({ multisigTx })
+    console.log({multisig: multisig.publicKey})
 })();
