@@ -22,7 +22,6 @@ use anchor_lang::solana_program;
 use anchor_lang::solana_program::instruction::Instruction;
 use std::convert::Into;
 
-
 const ANCHOR_ACCT_DESCRIM_SIZE: usize = 8;
 const VEC_SIZE: usize = 4;
 const PUBKEY_SIZE: usize = 32;
@@ -43,44 +42,43 @@ security_txt! {
 
 #[macro_export]
 macro_rules! vec_len {
-    ( $elem_size:expr, $elem_count:expr ) => {
-        {
-            ($elem_size * $elem_count + VEC_SIZE)
-        }
-    };
+    ( $elem_size:expr, $elem_count:expr ) => {{
+        ($elem_size * $elem_count + VEC_SIZE)
+    }};
 }
 
 #[macro_export]
 macro_rules! instructions_len {
-    ( $instructions: expr) => {
-        {
-            ($instructions.iter().map(|ix| {
-                PUBKEY_SIZE + vec_len!(PUBKEY_SIZE + 1 + 1, ix.accounts.len()) + vec_len!(1, ix.data.len())
+    ( $instructions: expr) => {{
+        ($instructions
+            .iter()
+            .map(|ix| {
+                PUBKEY_SIZE
+                    + vec_len!(PUBKEY_SIZE + 1 + 1, ix.accounts.len())
+                    + vec_len!(1, ix.data.len())
             })
-            .sum::<usize>() + VEC_SIZE)
-        }
-    };
+            .sum::<usize>()
+            + VEC_SIZE)
+    }};
 }
 
 #[macro_export]
 macro_rules! multisig_data_len {
-    ( $owner_count:expr ) => {
-        {
-            (ANCHOR_ACCT_DESCRIM_SIZE + vec_len!(PUBKEY_SIZE, $owner_count) + 8 + 1 + 4)
-        }
-    };
+    ( $owner_count:expr ) => {{
+        (ANCHOR_ACCT_DESCRIM_SIZE + vec_len!(PUBKEY_SIZE, $owner_count) + 8 + 1 + 4)
+    }};
 }
 
 #[macro_export]
 macro_rules! transaction_data_len {
-    ( $instructions:expr, $owner_count:expr ) => {
-        {
-            (ANCHOR_ACCT_DESCRIM_SIZE + PUBKEY_SIZE + instructions_len!($instructions) + vec_len!(1, $owner_count) + 4)
-        }
-    };
+    ( $instructions:expr, $owner_count:expr ) => {{
+        (ANCHOR_ACCT_DESCRIM_SIZE
+            + PUBKEY_SIZE
+            + instructions_len!($instructions)
+            + vec_len!(1, $owner_count)
+            + 4)
+    }};
 }
-
-
 
 declare_id!("LMAXm1DhfBg1YMvi79gXdPfsJpYuJb9urGkGNa12hvJ");
 
@@ -183,13 +181,26 @@ pub mod lmax_multisig {
 
     // Executes the given transaction if threshold owners have signed it.
     pub fn execute_transaction(ctx: Context<ExecuteTransaction>) -> Result<()> {
-        require!(ctx.accounts.multisig.owners.contains(ctx.accounts.executor.key), ErrorCode::InvalidExecutor);
+        require!(
+            ctx.accounts
+                .multisig
+                .owners
+                .contains(ctx.accounts.executor.key),
+            ErrorCode::InvalidExecutor
+        );
 
         // Do we have enough signers?
-        let sig_count = ctx.accounts.transaction.signers.iter()
+        let sig_count = ctx
+            .accounts
+            .transaction
+            .signers
+            .iter()
             .filter(|&did_sign| *did_sign)
             .count() as u64;
-        require!(sig_count >= ctx.accounts.multisig.threshold, ErrorCode::NotEnoughSigners);
+        require!(
+            sig_count >= ctx.accounts.multisig.threshold,
+            ErrorCode::NotEnoughSigners
+        );
 
         let multisig_key = ctx.accounts.multisig.key();
         let seeds = &[multisig_key.as_ref(), &[ctx.accounts.multisig.nonce]];
@@ -197,10 +208,15 @@ pub mod lmax_multisig {
         let accounts = ctx.remaining_accounts;
 
         // Execute the transaction signed by the multisig.
-        ctx.accounts.transaction.instructions.iter()
+        ctx.accounts
+            .transaction
+            .instructions
+            .iter()
             .map(|ix| {
                 let mut ix: Instruction = ix.into();
-                ix.accounts = ix.accounts.iter()
+                ix.accounts = ix
+                    .accounts
+                    .iter()
                     .map(|acc| {
                         let mut acc = acc.clone();
                         if &acc.pubkey == ctx.accounts.multisig_signer.key {
@@ -219,7 +235,13 @@ pub mod lmax_multisig {
 
     // Cancel the given transaction regardless of signatures.
     pub fn cancel_transaction(ctx: Context<CancelTransaction>) -> Result<()> {
-        require!(ctx.accounts.multisig.owners.contains(ctx.accounts.executor.key), ErrorCode::InvalidExecutor);
+        require!(
+            ctx.accounts
+                .multisig
+                .owners
+                .contains(ctx.accounts.executor.key),
+            ErrorCode::InvalidExecutor
+        );
         Ok(())
     }
 }
@@ -301,7 +323,7 @@ pub struct ExecuteTransaction<'info> {
     transaction: Box<Account<'info, Transaction>>,
     /// CHECK: success can be any address where rent exempt funds are sent
     #[account(mut)]
-    refundee:  AccountInfo<'info>,
+    refundee: AccountInfo<'info>,
     executor: Signer<'info>,
 }
 
@@ -313,7 +335,7 @@ pub struct CancelTransaction<'info> {
     transaction: Box<Account<'info, Transaction>>,
     /// CHECK: success can be any address where rent exempt funds are sent
     #[account(mut)]
-    refundee:  AccountInfo<'info>,
+    refundee: AccountInfo<'info>,
     executor: Signer<'info>,
 }
 
@@ -390,7 +412,10 @@ fn execute_set_owners(multisig: &mut Account<Multisig>, owners: Vec<Pubkey>) -> 
     require!(!owners.is_empty(), ErrorCode::NotEnoughOwners);
     // Increasing the number of owners requires reallocation of space in the data account.
     // This requires a signer to pay the fees for more space, but the instruction will be executed by the multisig.
-    require!(multisig_data_len!(owners.len()) <= multisig.to_account_info().data.borrow().len(), ErrorCode::TooManyOwners);
+    require!(
+        multisig_data_len!(owners.len()) <= multisig.to_account_info().data.borrow().len(),
+        ErrorCode::TooManyOwners
+    );
 
     if (owners.len() as u64) < multisig.threshold {
         multisig.threshold = owners.len() as u64;
@@ -403,7 +428,10 @@ fn execute_set_owners(multisig: &mut Account<Multisig>, owners: Vec<Pubkey>) -> 
 }
 
 fn execute_change_threshold(multisig: &mut Multisig, threshold: u64) -> Result<()> {
-    require!(threshold > 0 && threshold <= multisig.owners.len() as u64, ErrorCode::InvalidThreshold);
+    require!(
+        threshold > 0 && threshold <= multisig.owners.len() as u64,
+        ErrorCode::InvalidThreshold
+    );
     multisig.threshold = threshold;
     Ok(())
 }
