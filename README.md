@@ -15,6 +15,13 @@ To use, one must first create a `Multisig` account, specifying two important par
 1. Owners - the set of addresses that sign transactions for the multisig.
 2. Threshold - the number of signers required to execute a transaction.
 
+#### Client usage
+
+You can create the `Multisig` account with the `client/index.ts` script. Check `node client/index.ts --help` for
+usage.
+
+#### Remaining usage
+
 Once the `Multisig` account is created, one can create a `Transaction` account, specifying the parameters for a normal 
 Solana transaction.
 
