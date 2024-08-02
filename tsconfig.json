@@ -9,6 +9,6 @@
     "resolveJsonModule": true,
     "suppressExcessPropertyErrors": true
   },
-  "include": ["./tests"],
+  "include": ["./tests", "./client"],
   "exclude": ["./node_modules"]
 }
