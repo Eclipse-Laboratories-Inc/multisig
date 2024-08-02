@@ -42,8 +42,7 @@ const args = parse<IClientArgs>({
 })
 
 if (!args.owners) {
-  console.error("At least one owner is needed");
-  process.exit(1);
+  throw new Error("At least one owner is needed");
 }
 
 const PATH_TO_ANCHOR_CONFIG: string = "./Anchor.toml";
