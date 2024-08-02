@@ -28,7 +28,7 @@ const args = parse<IClientArgs>({
     type: String,
     multiple: true,
     optional: true,
-    description: 'The keypair files to the signers of the multisig transactions'
+    description: 'The keypair files of the owners of the multisig transactions'
   },
   help: {
     type: Boolean,
@@ -42,7 +42,7 @@ const args = parse<IClientArgs>({
 })
 
 if (!args.owners) {
-  console.error("At least one signer is needed");
+  console.error("At least one owner is needed");
   process.exit(1);
 }
 
