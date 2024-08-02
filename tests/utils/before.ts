@@ -9,7 +9,6 @@ import path = require("node:path");
 import shell from "shelljs";
 import { LmaxMultisig } from "../../target/types/lmax_multisig";
 
-
 export interface AnchorConfig {
   path: {
     idl_path: string;
@@ -44,7 +43,9 @@ export const setUpValidator = async (
   const config = readAnchorConfig(PATH_TO_ANCHOR_CONFIG);
   const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
   const user = loadKeypair(config.provider.wallet);
-  const programAddress = new PublicKey(config.programs[config.provider.cluster].lmax_multisig);
+  const programAddress = new PublicKey(
+    config.programs[config.provider.cluster].lmax_multisig
+  );
 
   const connection = new Connection("http://127.0.0.1:8899", "confirmed");
   const provider = new AnchorProvider(connection, new Wallet(user), {});
@@ -81,8 +82,10 @@ export const setUpValidator = async (
     if (deployIdl) {
       console.log("Deploying IDL");
       shell.exec(
-        `anchor idl init -f ${config.path.idl_path
-        } ${programAddress.toBase58()}  --provider.cluster ${connection.rpcEndpoint
+        `anchor idl init -f ${
+          config.path.idl_path
+        } ${programAddress.toBase58()}  --provider.cluster ${
+          connection.rpcEndpoint
         }`
       );
     }
@@ -92,7 +95,6 @@ export const setUpValidator = async (
     JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
     provider
   );
-
 
   return { provider, program };
 };
