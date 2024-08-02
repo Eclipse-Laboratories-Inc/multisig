@@ -38,7 +38,7 @@ const args = parse<IClientArgs>({
     }
 }, {
     helpArg: 'help',
-    headerContentSections: [{header: 'Multisig Client', content: 'Creates a multisig account'}]
+    headerContentSections: [{ header: 'Multisig Client', content: 'Creates a multisig account' }]
 })
 
 if (!args.signers) {
@@ -81,5 +81,5 @@ const pubkeys = keypairs.map((keypair) => keypair.publicKey);
         .rpc();
     // get the address of the new multisig
     console.log({ multisigTx })
-    console.log({multisig: multisig.publicKey})
+    console.log({ multisig: multisig.publicKey })
 })();
