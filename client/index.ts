@@ -69,7 +69,7 @@ const ownersKeypairs = args.owners.map((path) => loadKeypair(path));
 
 const ownersPubkeys = ownersKeypairs.map((keypair) => keypair.publicKey);
 
-(async () => {
+const asyncMain = async () => {
   const multisigTx = await program.methods.createMultisig(
     ownersPubkeys,
     new BN(2),
@@ -80,6 +80,8 @@ const ownersPubkeys = ownersKeypairs.map((keypair) => keypair.publicKey);
     .signers([multisig])
     .rpc();
   // get the address of the new multisig
-  console.log({ multisigTx })
-  console.log({ multisig: multisig.publicKey })
-})();
+  console.log({ multisigTx });
+  console.log({ multisig: multisig.publicKey });
+}
+
+asyncMain();
