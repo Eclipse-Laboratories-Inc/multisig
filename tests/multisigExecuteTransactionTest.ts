@@ -455,8 +455,8 @@ describe("Test transaction execution", async () => {
       );
       fail("The executeTransaction function should have failed");
     } catch (e) {
-      // @ts-ignore
       assert.ok(
+        // @ts-ignore
         !transactionAccount.didExecute,
         "Transaction should not have been executed"
       );
