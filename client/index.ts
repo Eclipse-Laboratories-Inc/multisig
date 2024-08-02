@@ -13,7 +13,7 @@ function loadKeypair(filename: string): Keypair {
 
 interface IClientArgs {
     connectionUrl: string;
-    signers: string[];
+    owners: string[];
     help?: boolean;
 }
 
@@ -24,7 +24,7 @@ const args = parse<IClientArgs>({
         defaultValue: "http://127.0.0.1:8899",
         description: 'The connection string to the solana node'
     },
-    signers: {
+    owners: {
         type: String,
         multiple: true,
         optional: true,
@@ -41,7 +41,7 @@ const args = parse<IClientArgs>({
     headerContentSections: [{ header: 'Multisig Client', content: 'Creates a multisig account' }]
 })
 
-if (!args.signers) {
+if (!args.owners) {
     console.error("At least one signer is needed");
     process.exit(1);
 }
@@ -65,13 +65,13 @@ const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
     programAddress
 );
 
-const keypairs = args.signers.map((path) => loadKeypair(path));
+const ownersKeypairs = args.owners.map((path) => loadKeypair(path));
 
-const pubkeys = keypairs.map((keypair) => keypair.publicKey);
+const ownersPubkeys = ownersKeypairs.map((keypair) => keypair.publicKey);
 
 (async () => {
     const multisigTx = await program.methods.createMultisig(
-        pubkeys,
+        ownersPubkeys,
         new BN(2),
         nonce)
         .accounts({
