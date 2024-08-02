@@ -6,44 +6,44 @@ import { AnchorProvider, Program, Wallet, BN } from "@coral-xyz/anchor";
 import { parse } from 'ts-command-line-args';
 
 function loadKeypair(filename: string): Keypair {
-    const secret = JSON.parse(fs.readFileSync(filename).toString()) as number[];
-    const secretKey = Uint8Array.from(secret);
-    return Keypair.fromSecretKey(secretKey);
+  const secret = JSON.parse(fs.readFileSync(filename).toString()) as number[];
+  const secretKey = Uint8Array.from(secret);
+  return Keypair.fromSecretKey(secretKey);
 }
 
 interface IClientArgs {
-    connectionUrl: string;
-    owners: string[];
-    help?: boolean;
+  connectionUrl: string;
+  owners: string[];
+  help?: boolean;
 }
 
 const args = parse<IClientArgs>({
-    connectionUrl: {
-        type: String,
-        optional: true,
-        defaultValue: "http://127.0.0.1:8899",
-        description: 'The connection string to the solana node'
-    },
-    owners: {
-        type: String,
-        multiple: true,
-        optional: true,
-        description: 'The keypair files to the signers of the multisig transactions'
-    },
-    help: {
-        type: Boolean,
-        optional: true,
-        alias: 'h',
-        description: 'Prints this usage guide'
-    }
+  connectionUrl: {
+    type: String,
+    optional: true,
+    defaultValue: "http://127.0.0.1:8899",
+    description: 'The connection string to the solana node'
+  },
+  owners: {
+    type: String,
+    multiple: true,
+    optional: true,
+    description: 'The keypair files to the signers of the multisig transactions'
+  },
+  help: {
+    type: Boolean,
+    optional: true,
+    alias: 'h',
+    description: 'Prints this usage guide'
+  }
 }, {
-    helpArg: 'help',
-    headerContentSections: [{ header: 'Multisig Client', content: 'Creates a multisig account' }]
+  helpArg: 'help',
+  headerContentSections: [{ header: 'Multisig Client', content: 'Creates a multisig account' }]
 })
 
 if (!args.owners) {
-    console.error("At least one signer is needed");
-    process.exit(1);
+  console.error("At least one signer is needed");
+  process.exit(1);
 }
 
 const PATH_TO_ANCHOR_CONFIG: string = "./Anchor.toml";
@@ -55,14 +55,14 @@ const programAddress = new PublicKey(config.programs[config.provider.cluster].lm
 const connection = new Connection(args.connectionUrl, "confirmed");
 const provider = new AnchorProvider(connection, new Wallet(user), {});
 const program = new Program<LmaxMultisig>(
-    JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
-    provider,
+  JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
+  provider,
 );
 
 const multisig = Keypair.generate();
 const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
-    [multisig.publicKey.toBuffer()],
-    programAddress
+  [multisig.publicKey.toBuffer()],
+  programAddress
 );
 
 const ownersKeypairs = args.owners.map((path) => loadKeypair(path));
@@ -70,16 +70,16 @@ const ownersKeypairs = args.owners.map((path) => loadKeypair(path));
 const ownersPubkeys = ownersKeypairs.map((keypair) => keypair.publicKey);
 
 (async () => {
-    const multisigTx = await program.methods.createMultisig(
-        ownersPubkeys,
-        new BN(2),
-        nonce)
-        .accounts({
-            multisig: multisig.publicKey
-        })
-        .signers([multisig])
-        .rpc();
-    // get the address of the new multisig
-    console.log({ multisigTx })
-    console.log({ multisig: multisig.publicKey })
+  const multisigTx = await program.methods.createMultisig(
+    ownersPubkeys,
+    new BN(2),
+    nonce)
+    .accounts({
+      multisig: multisig.publicKey
+    })
+    .signers([multisig])
+    .rpc();
+  // get the address of the new multisig
+  console.log({ multisigTx })
+  console.log({ multisig: multisig.publicKey })
 })();
