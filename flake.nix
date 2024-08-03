@@ -2,28 +2,39 @@
   inputs = {
     nixpkgs.url = "github:Denommus/nixpkgs/master";
     flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs =
     {
       self,
       flake-utils,
       nixpkgs,
+      rust-overlay,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import rust-overlay) ];
+        };
+
+        package = pkgs.callPackage ./multisig.nix {};
       in
       {
+        packages.default = package;
+        packages.multisig = package;
+
         devShells.default = pkgs.mkShell {
           pname = "multisig-shell";
+
+          inputsFrom = [ package ];
 
           buildInputs =
             [
               pkgs.anchor
-              pkgs.rustup
-              pkgs.pkg-config
               pkgs.nodejs_latest
               pkgs.nixfmt-rfc-style
             ]
