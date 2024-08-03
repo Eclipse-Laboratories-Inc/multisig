@@ -30,10 +30,9 @@
         devShells.default = pkgs.mkShell {
           pname = "multisig-shell";
 
-          inputsFrom = [ package ];
-
           buildInputs =
             [
+              pkgs.rustup
               pkgs.anchor
               pkgs.nodejs_latest
               pkgs.nixfmt-rfc-style
