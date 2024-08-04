@@ -21,7 +21,7 @@
           overlays = [ (import rust-overlay) ];
         };
 
-        package = pkgs.callPackage ./multisig.nix {};
+        package = pkgs.callPackage ./multisig.nix { };
       in
       {
         packages.default = package;
@@ -32,6 +32,7 @@
 
           buildInputs =
             [
+              # Using rustup because the solana toolchain requires it
               pkgs.rustup
               pkgs.anchor
               pkgs.nodejs_latest
