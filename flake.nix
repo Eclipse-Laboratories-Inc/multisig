@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:Denommus/nixpkgs/master";
+    nixpkgs.url = "github:Denommus/nixpkgs/solana-and-anchor";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
     rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
@@ -37,6 +37,7 @@
               pkgs.anchor
               pkgs.nodejs_latest
               pkgs.nixfmt-rfc-style
+              # pkgs.solana-validator
             ]
             ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
               pkgs.iconv
