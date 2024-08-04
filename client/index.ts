@@ -82,7 +82,7 @@ const ownersPubkeys = args.owners.map((pubkey) => new PublicKey(pubkey));
 
 const asyncMain = async () => {
   const multisigTx = await program.methods
-    .createMultisig(ownersPubkeys, new BN(2), nonce)
+    .createMultisig(ownersPubkeys, new BN(ownersPubkeys.length), nonce)
     .accounts({
       multisig: multisig.publicKey,
     })
