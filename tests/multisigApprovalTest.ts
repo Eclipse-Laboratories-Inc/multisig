@@ -1,10 +1,10 @@
 import assert from "assert";
-import {setUpValidator} from "./utils/before";
-import {AnchorProvider, BN, Program} from "@coral-xyz/anchor";
-import {Keypair, PublicKey, SystemProgram,} from "@solana/web3.js";
-import {MultisigDsl} from "./utils/multisigDsl";
-import {describe} from "mocha";
-import {fail} from "node:assert";
+import { setUpValidator } from "./utils/before";
+import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { MultisigDsl } from "./utils/multisigDsl";
+import { describe } from "mocha";
+import { fail } from "node:assert";
 import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test performing signing and execution", async () => {
@@ -32,10 +32,21 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress);
 
-    await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig.signer, 0);
   });
@@ -55,19 +66,31 @@ describe("Test performing signing and execution", async () => {
 
     // This nonce comes from the eth deposit
     const txnNonce = 4567;
-    const _transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address, txnNonce);
+    const _transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address,
+      txnNonce
+    );
 
     const [derivedTxnAddress, _bump] = PublicKey.findProgramAddressSync(
       [
-        Buffer.from('transaction_nonce'),
+        Buffer.from("transaction_nonce"),
         new BN(txnNonce).toArrayLike(Buffer, "le", 8),
       ],
       program.programId
-    )
+    );
 
     await dsl.approveTransaction(ownerB, multisig.address, derivedTxnAddress);
 
-    await dsl.executeTransaction(derivedTxnAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      derivedTxnAddress,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig.signer, 0);
   });
@@ -87,15 +110,20 @@ describe("Test performing signing and execution", async () => {
 
     // This nonce comes from the eth deposit
     const txnNonce = 45678;
-    const _transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address, txnNonce);
+    const _transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address,
+      txnNonce
+    );
 
     const [derivedTxnAddress, _bump] = PublicKey.findProgramAddressSync(
       [
-        Buffer.from('transaction_nonce'),
+        Buffer.from("transaction_nonce"),
         new BN(txnNonce).toArrayLike(Buffer, "le", 8),
       ],
       program.programId
-    )
+    );
 
     // signers array [ownerA, ownerB, ownerC];
     const txn = await program.account.transaction.fetch(derivedTxnAddress);
@@ -110,8 +138,6 @@ describe("Test performing signing and execution", async () => {
     assert(txn2.signers[0] === true);
     assert(txn2.signers[1] === true);
     assert(txn2.signers[2] === false);
-
-
   });
 
   it("should transfer partial funds", async () => {
@@ -127,10 +153,21 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress);
 
-    await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig.signer, 900_000);
   }).timeout(10000);
@@ -148,17 +185,39 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 2_000_000);
 
-    const transactionAddress1: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress1: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
-    const transactionAddress2: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress2: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress1);
 
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress2);
 
-    await dsl.executeTransaction(transactionAddress1, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress1,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
-    await dsl.executeTransaction(transactionAddress2, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress2,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig.signer, 0);
   }).timeout(20000);
@@ -176,14 +235,29 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     try {
-      await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+      await dsl.executeTransaction(
+        transactionAddress,
+        transactionInstruction,
+        multisig.signer,
+        multisig.address,
+        ownerB,
+        ownerA.publicKey
+      );
       fail("Should have failed to execute transaction");
     } catch (e) {
-      assert.match(e.message,
-        new RegExp(".*Error Code: NotEnoughSigners. Error Number: 6003. Error Message: Not enough owners signed this transaction"));
+      assert.match(
+        e.message,
+        new RegExp(
+          ".*Error Code: NotEnoughSigners. Error Number: 6003. Error Message: Not enough owners signed this transaction"
+        )
+      );
     }
     await dsl.assertBalance(multisig.signer, 1_000_000);
   });
@@ -201,13 +275,24 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     // Approve twice with the same owner
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress);
     await dsl.approveTransaction(ownerB, multisig.address, transactionAddress);
 
-    await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress,
+      transactionInstruction,
+      multisig.signer,
+      multisig.address,
+      ownerB,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig.signer, 0);
   }).timeout(10000);
@@ -225,17 +310,32 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     //Approve again with the same owner meaning still only 1/3 approval
     await dsl.approveTransaction(ownerA, multisig.address, transactionAddress);
 
     try {
-      await dsl.executeTransaction(transactionAddress, transactionInstruction, multisig.signer, multisig.address, ownerB, ownerA.publicKey);
+      await dsl.executeTransaction(
+        transactionAddress,
+        transactionInstruction,
+        multisig.signer,
+        multisig.address,
+        ownerB,
+        ownerA.publicKey
+      );
       fail("Should have failed to execute transaction");
     } catch (e) {
-      assert.match(e.message,
-        new RegExp(".*Error Code: NotEnoughSigners. Error Number: 6003. Error Message: Not enough owners signed this transaction"));
+      assert.match(
+        e.message,
+        new RegExp(
+          ".*Error Code: NotEnoughSigners. Error Number: 6003. Error Message: Not enough owners signed this transaction"
+        )
+      );
     }
     await dsl.assertBalance(multisig.signer, 1_000_000);
   });
@@ -253,7 +353,11 @@ describe("Test performing signing and execution", async () => {
 
     await dsl.assertBalance(multisig.signer, 1_000_000);
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     const notAnOwner = Keypair.generate();
 
@@ -266,16 +370,31 @@ describe("Test performing signing and execution", async () => {
       );
       fail("Should have failed to approve transaction");
     } catch (e) {
-      assert.match(e.message,
-        new RegExp(".*Error Code: InvalidOwner. Error Number: 6000. Error Message: The given owner is not part of this multisig"));
+      assert.match(
+        e.message,
+        new RegExp(
+          ".*Error Code: InvalidOwner. Error Number: 6000. Error Message: The given owner is not part of this multisig"
+        )
+      );
     }
     await dsl.assertBalance(multisig.signer, 1_000_000);
   });
 
   it("should transfer funds from two different multisig accounts", async () => {
-    const [ownerA, ownerB, ownerC, ownerD] = Array.from({length: 4}, (_, _n) => Keypair.generate());
-    const multisig1 = await dsl.createMultisigWithOwners(2, [ownerA, ownerB, ownerC], 1_000_000);
-    const multisig2 = await dsl.createMultisigWithOwners(2, [ownerB, ownerC, ownerD], 1_100_000);
+    const [ownerA, ownerB, ownerC, ownerD] = Array.from(
+      { length: 4 },
+      (_, _n) => Keypair.generate()
+    );
+    const multisig1 = await dsl.createMultisigWithOwners(
+      2,
+      [ownerA, ownerB, ownerC],
+      1_000_000
+    );
+    const multisig2 = await dsl.createMultisigWithOwners(
+      2,
+      [ownerB, ownerC, ownerD],
+      1_100_000
+    );
 
     let transactionInstruction1 = SystemProgram.transfer({
       fromPubkey: multisig1.signer,
@@ -291,14 +410,44 @@ describe("Test performing signing and execution", async () => {
     await dsl.assertBalance(multisig1.signer, 1_000_000);
     await dsl.assertBalance(multisig2.signer, 1_100_000);
 
-    const transactionAddress1: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction1], multisig1.address);
-    const transactionAddress2: PublicKey = await dsl.proposeTransaction(ownerB, [transactionInstruction2], multisig2.address);
+    const transactionAddress1: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction1],
+      multisig1.address
+    );
+    const transactionAddress2: PublicKey = await dsl.proposeTransaction(
+      ownerB,
+      [transactionInstruction2],
+      multisig2.address
+    );
 
-    await dsl.approveTransaction(ownerB, multisig1.address, transactionAddress1);
-    await dsl.approveTransaction(ownerC, multisig2.address, transactionAddress2);
+    await dsl.approveTransaction(
+      ownerB,
+      multisig1.address,
+      transactionAddress1
+    );
+    await dsl.approveTransaction(
+      ownerC,
+      multisig2.address,
+      transactionAddress2
+    );
 
-    await dsl.executeTransaction(transactionAddress1, transactionInstruction1, multisig1.signer, multisig1.address, ownerB, ownerA.publicKey);
-    await dsl.executeTransaction(transactionAddress2, transactionInstruction2, multisig2.signer, multisig2.address, ownerC, ownerA.publicKey);
+    await dsl.executeTransaction(
+      transactionAddress1,
+      transactionInstruction1,
+      multisig1.signer,
+      multisig1.address,
+      ownerB,
+      ownerA.publicKey
+    );
+    await dsl.executeTransaction(
+      transactionAddress2,
+      transactionInstruction2,
+      multisig2.signer,
+      multisig2.address,
+      ownerC,
+      ownerA.publicKey
+    );
 
     await dsl.assertBalance(multisig1.signer, 950_000);
     await dsl.assertBalance(multisig2.signer, 1_000_000);

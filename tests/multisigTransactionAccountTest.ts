@@ -1,11 +1,16 @@
 import assert = require("assert");
-import {setUpValidator} from "./utils/before";
-import {AnchorProvider, BN, Program} from "@coral-xyz/anchor";
-import {Keypair, PublicKey, SystemProgram, Transaction,} from "@solana/web3.js";
-import {MultisigDsl} from "./utils/multisigDsl";
-import {describe} from "mocha";
+import { setUpValidator } from "./utils/before";
+import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
+import { MultisigDsl } from "./utils/multisigDsl";
+import { describe } from "mocha";
 
-import {fail} from "node:assert";
+import { fail } from "node:assert";
 import { LmaxMultisig } from "../target/types/lmax_multisig";
 
 describe("Test transaction accounts", async () => {
@@ -30,14 +35,26 @@ describe("Test transaction accounts", async () => {
       toPubkey: provider.publicKey,
     });
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
-    let transactionAccount = await program.account.transaction.fetch(transactionAddress);
+    let transactionAccount = await program.account.transaction.fetch(
+      transactionAddress
+    );
 
     //Approved by user in index 0 not by users in index 1 or 2
     assert.ok(transactionAccount.signers[0], "OwnerA should have approved");
-    assert.ok(!transactionAccount.signers[1], "OwnerB should not have approved");
-    assert.ok(!transactionAccount.signers[2], "OwnerC should not have approved");
+    assert.ok(
+      !transactionAccount.signers[1],
+      "OwnerB should not have approved"
+    );
+    assert.ok(
+      !transactionAccount.signers[2],
+      "OwnerC should not have approved"
+    );
     assert.deepStrictEqual(
       transactionAccount.multisig,
       multisig.address,
@@ -76,7 +93,11 @@ describe("Test transaction accounts", async () => {
       toPubkey: provider.publicKey,
     });
 
-    const transactionAddress: PublicKey = await dsl.proposeTransaction(ownerA, [transactionInstruction], multisig.address);
+    const transactionAddress: PublicKey = await dsl.proposeTransaction(
+      ownerA,
+      [transactionInstruction],
+      multisig.address
+    );
 
     await dsl.approveTransaction(ownerC, multisig.address, transactionAddress);
 
@@ -86,7 +107,10 @@ describe("Test transaction accounts", async () => {
 
     //Approve by owners in index 0 and 2 not by owner in index 1
     assert.ok(transactionAccount.signers[0], "OwnerA should have approved");
-    assert.ok(!transactionAccount.signers[1], "OwnerB should not have approved");
+    assert.ok(
+      !transactionAccount.signers[1],
+      "OwnerB should not have approved"
+    );
     assert.ok(transactionAccount.signers[2], "OwnerC should have approved");
     assert.deepStrictEqual(
       transactionAccount.multisig,
@@ -127,11 +151,19 @@ describe("Test transaction accounts", async () => {
     });
 
     try {
-      await dsl.proposeTransaction(notAnOwner, [transactionInstruction], multisig.address);
+      await dsl.proposeTransaction(
+        notAnOwner,
+        [transactionInstruction],
+        multisig.address
+      );
       fail("Should have failed to propose transaction");
     } catch (e) {
-      assert.match(e.message,
-        new RegExp(".*Error Code: InvalidOwner. Error Number: 6000. Error Message: The given owner is not part of this multisig"));
+      assert.match(
+        e.message,
+        new RegExp(
+          ".*Error Code: InvalidOwner. Error Number: 6000. Error Message: The given owner is not part of this multisig"
+        )
+      );
     }
   });
 
@@ -143,14 +175,17 @@ describe("Test transaction accounts", async () => {
       await dsl.proposeTransaction(ownerA, [], multisig.address);
       fail("Should have failed to propose transaction");
     } catch (e) {
-      assert.match(e.message,
-        new RegExp(".*Error Code: MissingInstructions. Error Number: 6012. Error Message: The number of instructions must be greater than zero."));
+      assert.match(
+        e.message,
+        new RegExp(
+          ".*Error Code: MissingInstructions. Error Number: 6012. Error Message: The number of instructions must be greater than zero."
+        )
+      );
     }
   });
 
   it("should not be able to edit transaction account with transaction account private key after initialisation", async () => {
     const multisig = await dsl.createMultisig(2, 3);
-
 
     // Create instruction to send funds from multisig
     let transactionInstruction = SystemProgram.transfer({
@@ -161,42 +196,45 @@ describe("Test transaction accounts", async () => {
 
     const transactionKeypair: Keypair = Keypair.generate();
     await provider.sendAndConfirm(
-        new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: provider.publicKey,
-              lamports: new BN(1_000_000),
-              toPubkey: transactionKeypair.publicKey,
-            })
-        )
+      new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: provider.publicKey,
+          lamports: new BN(1_000_000),
+          toPubkey: transactionKeypair.publicKey,
+        })
+      )
     );
 
-    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
+    await dsl.proposeTransaction(
+      multisig.owners[0],
+      [transactionInstruction],
+      multisig.address,
+      null,
+      transactionKeypair
+    );
 
     let blockhash = await provider.connection.getLatestBlockhash();
-    let transaction = new Transaction({blockhash: blockhash.blockhash, lastValidBlockHeight: blockhash.lastValidBlockHeight, feePayer: provider.publicKey})
-        .add(SystemProgram.transfer(
-            {
-              fromPubkey: transactionKeypair.publicKey,
-              toPubkey: provider.publicKey,
-              lamports: 1
-            }
-        ));
-    transaction.sign(transactionKeypair)
+    let transaction = new Transaction({
+      blockhash: blockhash.blockhash,
+      lastValidBlockHeight: blockhash.lastValidBlockHeight,
+      feePayer: provider.publicKey,
+    }).add(
+      SystemProgram.transfer({
+        fromPubkey: transactionKeypair.publicKey,
+        toPubkey: provider.publicKey,
+        lamports: 1,
+      })
+    );
+    transaction.sign(transactionKeypair);
     await provider.wallet.signTransaction(transaction);
 
-
     //Try to transfer funds from the transaction account
-    try
-    {
+    try {
       await provider.sendAndConfirm(transaction);
-    }
-    catch (e)
-    {
+    } catch (e) {
       assert.ok(
-          e.logs.includes(
-              "Transfer: `from` must not carry data"
-          ),
-          "Did not get expected error message"
+        e.logs.includes("Transfer: `from` must not carry data"),
+        "Did not get expected error message"
       );
     }
   });
@@ -213,29 +251,37 @@ describe("Test transaction accounts", async () => {
 
     const transactionKeypair: Keypair = Keypair.generate();
     await provider.sendAndConfirm(
-        new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: provider.publicKey,
-              lamports: new BN(1_000_000),
-              toPubkey: transactionKeypair.publicKey,
-            })
-        )
+      new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: provider.publicKey,
+          lamports: new BN(1_000_000),
+          toPubkey: transactionKeypair.publicKey,
+        })
+      )
     );
 
-    await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
+    await dsl.proposeTransaction(
+      multisig.owners[0],
+      [transactionInstruction],
+      multisig.address,
+      null,
+      transactionKeypair
+    );
 
     //Try to use the same transaction account again in a new transaction (hence overwriting the data)
-    try
-    {
-      await dsl.proposeTransaction(multisig.owners[0], [transactionInstruction], multisig.address, null, transactionKeypair);
-    }
-    catch (e)
-    {
+    try {
+      await dsl.proposeTransaction(
+        multisig.owners[0],
+        [transactionInstruction],
+        multisig.address,
+        null,
+        transactionKeypair
+      );
+    } catch (e) {
       assert.ok(
-          e.logs.join(",").includes("already in use"),
-          "Did not get expected error message"
+        e.logs.join(",").includes("already in use"),
+        "Did not get expected error message"
       );
     }
   });
-
 });

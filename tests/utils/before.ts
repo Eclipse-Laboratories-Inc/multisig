@@ -9,7 +9,6 @@ import path = require("node:path");
 import shell from "shelljs";
 import { LmaxMultisig } from "../../target/types/lmax_multisig";
 
-
 export interface AnchorConfig {
   path: {
     idl_path: string;
@@ -44,18 +43,20 @@ export const setUpValidator = async (
   const config = readAnchorConfig(PATH_TO_ANCHOR_CONFIG);
   const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
   const user = loadKeypair(config.provider.wallet);
-  const programAddress = new PublicKey(config.programs[config.provider.cluster].lmax_multisig);
+  const programAddress = new PublicKey(
+    config.programs[config.provider.cluster].lmax_multisig
+  );
 
   const connection = new Connection("http://127.0.0.1:8899", "confirmed");
   const provider = new AnchorProvider(connection, new Wallet(user), {});
 
   if (config.provider.cluster === "localnet") {
     const internalController: AbortController = new AbortController();
-    const {signal} = internalController;
+    const { signal } = internalController;
 
     exec(
       `solana-test-validator --ledger ${ledgerDir} --mint ${user.publicKey} --bpf-program ${config.programs.localnet.lmax_multisig} ${config.path.binary_path}`,
-      {signal}
+      { signal }
     );
 
     let attempts = 0;
@@ -94,7 +95,6 @@ export const setUpValidator = async (
     JSON.parse(fs.readFileSync(config.path.idl_path).toString()),
     provider
   );
-
 
   return { provider, program };
 };
