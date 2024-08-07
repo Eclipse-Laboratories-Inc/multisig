@@ -22,8 +22,8 @@ for usage.
 
 #### Remaining usage
 
-Once the `Multisig` account is created, one can create a `Transaction` account, specifying the parameters for a normal
-Solana transaction.
+Once the `Multisig` account is created, one can create a `Transaction` account with the `create_transaction`
+instruction, specifying the parameters for a normal Solana transaction.
 
 To sign, owners should invoke the `approve` instruction, and finally, the `execute_transaction`, once enough
 (i.e. `threshold`) of the owners have signed.
