@@ -15,6 +15,7 @@ interface IClientArgs {
   connectionUrl: string;
   pathToAnchorConfig: string;
   owners: string[];
+  threshold?: number;
   help?: boolean;
 }
 
@@ -37,6 +38,11 @@ const args = parse<IClientArgs>(
       multiple: true,
       optional: true,
       description: "The public keys of the owners of the multisig transactions",
+    },
+    threshold: {
+      type: Number,
+      optional: true,
+      description: "How many signers are necessary to approve the transaction",
     },
     help: {
       type: Boolean,
@@ -80,9 +86,15 @@ const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
 
 const ownersPubkeys = args.owners.map((pubkey) => new PublicKey(pubkey));
 
+const threshold = args.threshold || ownersPubkeys.length;
+
+if (threshold <= 0) {
+  throw new Error("Threshold needs to be 1 or more")
+}
+
 const asyncMain = async () => {
   const multisigTx = await program.methods
-    .createMultisig(ownersPubkeys, new BN(ownersPubkeys.length), nonce)
+    .createMultisig(ownersPubkeys, new BN(threshold), nonce)
     .accounts({
       multisig: multisig.publicKey,
     })
