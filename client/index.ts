@@ -65,8 +65,13 @@ if (!args.owners) {
 
 const PATH_TO_ANCHOR_CONFIG: string = args.pathToAnchorConfig;
 
+if (!config.provider || !config.provider.wallet || !config.programs || !config.programs[config.provider.cluster]) {
+  throw new Error('Invalid configuration in Anchor.toml');
+}
+
 const config = toml.parse(fs.readFileSync(PATH_TO_ANCHOR_CONFIG).toString());
-const user = loadKeypair(config.provider.wallet);
+const walletPath = process.env.WALLET_PATH || config.provider.wallet;
+const user = loadKeypair(walletPath);
 const programAddress = new PublicKey(
   config.programs[config.provider.cluster].lmax_multisig
 );
@@ -79,10 +84,15 @@ const program = new Program<LmaxMultisig>(
 );
 
 const multisig = Keypair.generate();
-const [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
-  [multisig.publicKey.toBuffer()],
-  programAddress
-);
+let _multisigSigner, nonce;
+try {
+  [_multisigSigner, nonce] = PublicKey.findProgramAddressSync(
+    [multisig.publicKey.toBuffer()],
+    programAddress
+  );
+} catch (error) {
+  throw new Error(`Failed to find program address: ${error.message}`);
+}
 
 const ownersPubkeys = args.owners.map((pubkey) => new PublicKey(pubkey));
 
